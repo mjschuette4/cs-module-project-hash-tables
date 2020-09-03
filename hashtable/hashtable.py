@@ -7,10 +7,8 @@ class HashTableEntry:
         self.value = value
         self.next = None
 
-
 # Hash table can't have fewer than this many slots
 MIN_CAPACITY = 8
-
 
 class HashTable:
     """
@@ -21,7 +19,9 @@ class HashTable:
     """
 
     def __init__(self, capacity):
-        # Your code here
+        self.capacity = capacity
+        self.bucket = [None] * capacity
+        self.count = 0
 
 
     def get_num_slots(self):
@@ -34,7 +34,7 @@ class HashTable:
 
         Implement this.
         """
-        # Your code here
+        return len(self.bucket)
 
 
     def get_load_factor(self):
@@ -44,7 +44,8 @@ class HashTable:
         Implement this.
         """
         # Your code here
-
+        load_factor = self.count / self.get_num_slots()
+        return load_factor
 
     def fnv1(self, key):
         """
@@ -62,8 +63,10 @@ class HashTable:
 
         Implement this, and/or FNV-1.
         """
-        # Your code here
-
+        hash = 5381
+        for c in key:
+            hash = (hash << 5) + hash + ord(c)
+        return hash
 
     def hash_index(self, key):
         """
@@ -81,8 +84,27 @@ class HashTable:
 
         Implement this.
         """
-        # Your code here
+        index = self.hash_index(key)
+        new_node = HashTableEntry(key, value)
+        current_node = self.bucket[index]
+        if self.bucket[index] == None:
+            self.bucket[index] = new_node
+            self.count += 1
 
+        elif self.bucket[index] is not None and self.bucket[index].key == key:
+            self.bucket[index].value = value
+
+        elif self.bucket[index] is not None:
+            while current_node is not None:
+                if current_node.next is None:
+                    current_node.next = new_node
+                    self.count += 1
+                    return current_node
+                elif current_node.next is not None and current_node.next.key == key:
+                    current_node.next.value = value
+                    return current_node.next
+                else:
+                    current_node = current_node.next
 
     def delete(self, key):
         """
@@ -92,7 +114,23 @@ class HashTable:
 
         Implement this.
         """
-        # Your code here
+        hashed_index = self.hash_index(key)
+        current_node = self.bucket[hashed_index]
+
+        if self.bucket[hashed_index] is None:
+            return None
+        if self.bucket[hashed_index].key == key:
+            node_to_delete = self.bucket[hashed_index]
+            self.bucket[hashed_index] = node_to_delete.next
+            node_to_delete.next = None
+        else:
+            while current_node is not None:
+                if current_node.next.key == key and current_node.next.next is not None:
+                    next_node = current_node.next
+                    current_node.next = current_node.next.next
+                    return next_node
+
+                current_node = current_node.next
 
 
     def get(self, key):
@@ -103,7 +141,18 @@ class HashTable:
 
         Implement this.
         """
-        # Your code here
+        hashed_index = self.hash_index(key)
+        current_node = self.bucket[hashed_index]
+
+        if current_node is not None and current_node.key == key:
+            return self.bucket[hashed_index].value
+
+        else:
+            while current_node is not None:
+                if current_node.key == key:
+                    return current_node.value
+                current_node = current_node.next
+        return None
 
 
     def resize(self, new_capacity):
@@ -114,7 +163,21 @@ class HashTable:
         Implement this.
         """
         # Your code here
-
+        new_bucket = [None] * new_capacity
+        old_bucket = self.bucket
+        self.bucket = new_bucket
+        self.count = 0
+        self.capacity = new_capacity
+        current_index = 0
+        while current_index < len(old_bucket):
+            current_node = old_bucket[current_index]
+            if current_node is not None:
+                next_node = current_node.next
+                current_node.next = None
+                self.put(current_node.key, current_node.value)
+                old_bucket[current_index] = next_node
+            elif current_node is None:
+                current_index += 1
 
 
 if __name__ == "__main__":
